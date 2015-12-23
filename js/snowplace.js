@@ -1,3 +1,6 @@
+var phi = 1.618033988749894848;
+var pi = 3.14159265359;
+
 // Setup three.js WebGL renderer
 var renderer = new THREE.WebGLRenderer( { antialias: true } );
 
@@ -51,7 +54,7 @@ for (var i = 0; i < plane.geometry.vertices.length; i++){
 
 //make particles
   var particles = new THREE.Geometry();
-  var partCount = 2500;
+  var partCount = 500;
 
   for (var p = 0; p<partCount; p++){
     var part = new THREE.Vector3(
@@ -85,6 +88,44 @@ var light = new THREE.PointLight( 0xffffff, 1, 200);
 light.position.set( -10,25,-2);
 light.castShadow = true;
 everything.add( light );
+
+var tree = [];
+var treeNumber = 30;
+for (var i = 0; i < treeNumber; i++){
+  var treeWidth = Math.random() + 1;
+  var treeHeight = Math.random()*5 + 3;
+  tree[i] = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.01, treeWidth, treeHeight),
+    new THREE.MeshLambertMaterial({color: 0x00bb00})
+    );
+  tree[i].position.x = Math.random()*100 - 50;
+  tree[i].position.z = Math.random()*100 - 50;
+  everything.add(tree[i]);
+}
+
+var pine = [];
+var pineNumber = 10;
+var branch = [];
+for (var i = 0; i < pineNumber; i++){
+  var branchNumber = Math.random()*10 + 10;
+  pine[i] = new THREE.Object3D();
+  branch[i] = [];
+  for (var j = 0; j < branchNumber; j++){
+    branch[i][j] = new THREE.Mesh(
+      new THREE.TetrahedronGeometry(),
+      new THREE.MeshLambertMaterial({color:0x00ee00})
+    );
+    branch[i][j].geometry.vertices[0].z = 2;
+    branch[i][j].position.y = j/branchNumber * 10;
+    branch[i][j].scale.set(branchNumber/(j+5) + 1, branchNumber/(j+5) + 1, branchNumber/(j+5) + 1);
+    branch[i][j].rotation.y = j*phi*pi;
+    pine[i].add(branch[i][j]);
+  }
+  pine[i].scale.set(0.5,0.5,0.5);
+  pine[i].position.x = Math.random()*50 - 25;
+  pine[i].position.z = Math.random()*50 - 25;
+  everything.add(pine[i]);
+}
 
 scene.add(everything);
 
@@ -170,7 +211,6 @@ function animate() {
     particles.vertices[p].z += particles.vertices[p].velocity.z;
     particles.vertices[p].x += particles.vertices[p].velocity.x;
   }
-
 
   //Update VR headset position and apply to camera.
   controls.update();
