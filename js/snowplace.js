@@ -47,8 +47,10 @@ plane.rotation.x = -pi/2;
 everything.add( plane );
 
 for (var i = 0; i < plane.geometry.vertices.length; i++){
-  plane.geometry.vertices[i].z = 2 - 1.1*Math.sin(plane.geometry.vertices[i].y/2) - 0.7*Math.sin(plane.geometry.vertices[i].x/3) - 0.9*Math.cos(plane.geometry.vertices[i].y/4) - 2*Math.cos(plane.geometry.vertices[i].x/5);
+  plane.geometry.vertices[i].z = 1.5 - 0.5*Math.sin(plane.geometry.vertices[i].y/2) - 0.3*Math.sin(plane.geometry.vertices[i].x/3) - 0.2*Math.cos(plane.geometry.vertices[i].y/4) - 0.7*Math.cos(plane.geometry.vertices[i].x/5);
 };
+
+var eatSnowDistance = 3;
 
 //flatground
 var plane3Geometry = new THREE.PlaneGeometry( 100, 100, 50, 50 );
@@ -61,7 +63,7 @@ everything.add( plane3 );
 
 //make particles
   var particles = new THREE.Geometry();
-  var partCount = 500;
+  var partCount = 2000;
 
   for (var p = 0; p<partCount; p++){
     var part = new THREE.Vector3(
@@ -98,17 +100,22 @@ everything.add( light );
 
 var tree = [];
 var treeTimer = [];
+var treeVector = [];
+var treeHeight = [];
+var treeSpeed = 0.05;
 var treeNumber = 30;
 for (var i = 0; i < treeNumber; i++){
+  treeTimer[i] = 0;
+  treeVector[i] = new THREE.Vector2();
   var treeWidth = Math.random() + 1;
-  var treeHeight = Math.random()*5 + 3;
+  treeHeight[i] = Math.random()*5 + 3;
   tree[i] = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.01, treeWidth, treeHeight),
+    new THREE.CylinderGeometry(0.01, treeWidth, treeHeight[i]),
     new THREE.MeshLambertMaterial({color: 0x00bb00})
     );
   tree[i].position.x = Math.random()*100 - 50;
   tree[i].position.z = Math.random()*100 - 50;
-  tree[i].position.y = treeHeight/2;
+  tree[i].position.y = treeHeight[i]/2;
   everything.add(tree[i]);
 }
 
@@ -224,7 +231,7 @@ function animate() {
   for (var i = 0; i < plane.geometry.vertices.length; i++){
     var vertexPos = new THREE.Vector2();
     vertexPos.set(plane.geometry.vertices[i].x + everything.position.x, -plane.geometry.vertices[i].y + everything.position.z);
-    if (vertexPos.distanceTo(pos) < 2.5){
+    if (vertexPos.distanceTo(pos) < eatSnowDistance){
       plane.geometry.vertices[i].z = -5;
       plane.geometry.verticesNeedUpdate = true;
     }
@@ -233,11 +240,20 @@ function animate() {
   for (var i = 0; i < tree.length; i++){//make trees jump away from you
     var treePos = new THREE.Vector2();
     treePos.set(tree[i].position.x + everything.position.x, tree[i].position.z + everything.position.z);
-    if (treePos.distanceTo(pos) < 4){
-      treePos.x -= 4*pos.x;
-      treePos.y -= 4*pos.y;
-      tree[i].position.x += 2*treePos.y;
-      tree[i].position.z += 2*treePos.x;
+    if (treePos.distanceTo(pos) < 4 && treeTimer[i] <= 0){//is it time to jump?
+      treeTimer[i] = 2;
+      if (treePos.x*pos.y > pos.x*treePos.y){
+        var treeSign = 1;
+      }else{
+        var treeSign = -1;
+      }
+      treeVector[i].set(treePos.y * treeSign, -treePos.x * treeSign);//here is where to jump!
+    }
+    if (treeTimer[i] > -0.04){
+      tree[i].position.x += treeVector[i].x*treeSpeed;
+      tree[i].position.z += treeVector[i].y*treeSpeed;
+      tree[i].position.y = 5 + treeHeight[i]/2 + -5*(treeTimer[i]-1)*(treeTimer[i]-1);//height is a parabola
+      treeTimer[i] -= 0.04;
     }
   }
 
