@@ -28,10 +28,10 @@ scene.fog = new THREE.FogExp2( 0xaaddff, .1);
 var everything = new THREE.Object3D();
 
 //sky
-var plane2Geometry = new THREE.PlaneGeometry( 100, 100, 50, 50 );
+var plane2Geometry = new THREE.PlaneGeometry( 100, 100, 100, 100 );
 var plane2Material = new THREE.MeshLambertMaterial( {color: 0xcccccc, side: THREE.DoubleSide, wireframe:false} );
 var plane2 = new THREE.Mesh( plane2Geometry, plane2Material );
-plane2.rotation.x = 1.58;
+plane2.rotation.x = pi/2;
 plane2.position.y = 12;
 everything.add( plane2 );
 
@@ -39,18 +39,25 @@ for (var i = 0; i < plane2.geometry.vertices.length; i++){
   plane2.geometry.vertices[i].z = 1*Math.sin(plane2.geometry.vertices[i].y/3) + Math.sin(plane2.geometry.vertices[i].x/2.6) + 1.1*Math.cos(plane2.geometry.vertices[i].y/3.8) + 2.1*Math.cos(plane2.geometry.vertices[i].x/3);
 };
 
-//ground
+//snowground
 var planeGeometry = new THREE.PlaneGeometry( 100, 100, 50, 50 );
 var planeMaterial = new THREE.MeshLambertMaterial( {color: 0xffffff, side: THREE.DoubleSide, wireframe:false} );
 var plane = new THREE.Mesh( planeGeometry, planeMaterial );
-plane.rotation.x = 1.58;
+plane.rotation.x = -pi/2;
 everything.add( plane );
 
 for (var i = 0; i < plane.geometry.vertices.length; i++){
-  plane.geometry.vertices[i].z = 1.5*Math.sin(plane.geometry.vertices[i].y/2) + Math.sin(plane.geometry.vertices[i].x/3) + 1.3*Math.cos(plane.geometry.vertices[i].y/4) + 2.4*Math.cos(plane.geometry.vertices[i].x/5);
+  plane.geometry.vertices[i].z = 2 - 1.1*Math.sin(plane.geometry.vertices[i].y/2) - 0.7*Math.sin(plane.geometry.vertices[i].x/3) - 0.9*Math.cos(plane.geometry.vertices[i].y/4) - 2*Math.cos(plane.geometry.vertices[i].x/5);
 };
 
-  var snowFloor = -4;
+//flatground
+var plane3Geometry = new THREE.PlaneGeometry( 100, 100, 50, 50 );
+var plane3Material = new THREE.MeshLambertMaterial( {color: 0x662200, side: THREE.DoubleSide, wireframe:false} );
+var plane3 = new THREE.Mesh( plane3Geometry, plane3Material );
+plane3.rotation.x = -pi/2;
+everything.add( plane3 );
+
+  var snowFloor = 0;
 
 //make particles
   var particles = new THREE.Geometry();
@@ -90,6 +97,7 @@ light.castShadow = true;
 everything.add( light );
 
 var tree = [];
+var treeTimer = [];
 var treeNumber = 30;
 for (var i = 0; i < treeNumber; i++){
   var treeWidth = Math.random() + 1;
@@ -100,11 +108,12 @@ for (var i = 0; i < treeNumber; i++){
     );
   tree[i].position.x = Math.random()*100 - 50;
   tree[i].position.z = Math.random()*100 - 50;
+  tree[i].position.y = treeHeight/2;
   everything.add(tree[i]);
 }
 
 var pine = [];
-var pineNumber = 10;
+var pineNumber = 2;
 var branch = [];
 for (var i = 0; i < pineNumber; i++){
   var branchNumber = Math.random()*10 + 10;
@@ -121,7 +130,7 @@ for (var i = 0; i < pineNumber; i++){
     branch[i][j].rotation.y = j*phi*pi;
     pine[i].add(branch[i][j]);
   }
-  pine[i].scale.set(0.5,0.5,0.5);
+  pine[i].scale.set(0.5,0.5,  0.5);
   pine[i].position.x = Math.random()*50 - 25;
   pine[i].position.z = Math.random()*50 - 25;
   everything.add(pine[i]);
@@ -212,6 +221,35 @@ function animate() {
     particles.vertices[p].x += particles.vertices[p].velocity.x;
   }
 
+  for (var i = 0; i < plane.geometry.vertices.length; i++){
+    var vertexPos = new THREE.Vector2();
+    vertexPos.set(plane.geometry.vertices[i].x + everything.position.x, -plane.geometry.vertices[i].y + everything.position.z);
+    if (vertexPos.distanceTo(pos) < 2.5){
+      plane.geometry.vertices[i].z = -5;
+      plane.geometry.verticesNeedUpdate = true;
+    }
+  };
+
+  for (var i = 0; i < tree.length; i++){//make trees jump away from you
+    var treePos = new THREE.Vector2();
+    treePos.set(tree[i].position.x + everything.position.x, tree[i].position.z + everything.position.z);
+    if (treePos.distanceTo(pos) < 4){
+      treePos.x -= 4*pos.x;
+      treePos.y -= 4*pos.y;
+      tree[i].position.x += 2*treePos.y;
+      tree[i].position.z += 2*treePos.x;
+    }
+  }
+
+  for (var i = 0; i < pine.length; i++){//make ugly trees jump away from you
+    var treePos = new THREE.Vector2();
+    treePos.set(pine[i].position.x + everything.position.x, pine[i].position.z + everything.position.z);
+    if (treePos.distanceTo(pos) < 4){
+      pine[i].position.x += treePos.x/50;
+      pine[i].position.z += treePos.y/50;
+    }
+  }
+
   //Update VR headset position and apply to camera.
   controls.update();
 
@@ -259,3 +297,11 @@ function onWindowResize() {
   effect.setSize( window.innerWidth, window.innerHeight );
 }
 window.addEventListener( 'resize', onWindowResize, false );
+
+
+/*
+Efficient Optomizationatron Listo
+
+make cone trees actually cones
+
+*/
