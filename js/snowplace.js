@@ -65,7 +65,7 @@ var plane3 = new THREE.Mesh( plane3Geometry, plane3Material );
 plane3.rotation.x = -pi/2;
 scene.add( plane3 );
 
-var snowFloor = 0;
+  var snowFloor = 0;
 
 //make particles
   var particles = new THREE.Geometry();
@@ -98,7 +98,7 @@ var snowFloor = 0;
   particleSystem.frustumCulled = false;
   everything.add(particleSystem);
 
-//lights
+//lights    
 var light = new THREE.PointLight( 0xffffff, 0.7, 100);
 light.position.set( -10,25,-2);
 light.castShadow = true;
@@ -201,7 +201,7 @@ for (var i = 0; i < pineNumber; i++){
   star.rotation.z = tau/8;
   star.position.y = 0.8 + treeTrunkHeight;
   pine[i].add(star);
-  //starlights
+  //starlights    
   starlight[i] = new THREE.PointLight( 0xffff00, 1, 5);
   starlight[i].position = star.position;
   starlight[i].castShadow = true;
@@ -336,7 +336,7 @@ function animate() {
         24*Math.random() - 12 - everything.position.z);
       particles.vertices[p].velocity.y = -Math.random()/40 + 0.0001;
     }
-
+    
     particles.vertices[p].y += particles.vertices[p].velocity.y;
     particles.vertices[p].z += particles.vertices[p].velocity.z;
     particles.vertices[p].x += particles.vertices[p].velocity.x;
