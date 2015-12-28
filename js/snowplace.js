@@ -54,11 +54,11 @@ for (var i = 0; i < plane.geometry.vertices.length; i++){
 var eatSnowDistance = 3;
 
 //flatground
-var plane3Geometry = new THREE.PlaneGeometry( 100, 100, 50, 50 );
+var plane3Geometry = new THREE.PlaneGeometry( 50, 50, 5, 5 );
 var plane3Material = new THREE.MeshLambertMaterial( {color: 0x662200, side: THREE.DoubleSide, wireframe:false} );
 var plane3 = new THREE.Mesh( plane3Geometry, plane3Material );
 plane3.rotation.x = -pi/2;
-everything.add( plane3 );
+scene.add( plane3 );
 
   var snowFloor = 0;
 
@@ -213,18 +213,24 @@ for (var i = 0; i < pineNumber; i++){
 //presents
 var present = [];
 var presentNumber = 20;
-var presentArray = [];
+var presentArray = []; //heights if not found, 0 if found
+var stackHeight = 0.05;
+var presentStack = new THREE.Object3D();
+presentStack.matrixAutoUpdate = false;
+scene.add(presentStack);
 for (var i = 0; i<presentNumber; i++){
-  presentArray[i] = 0;
-  var presentHeight = 0.1;
-  present[i] = new THREE.Mesh(
-    new THREE.BoxGeometry(0.1 + Math.random()/4, presentHeight, 0.1 + Math.random()/4),
+  var presentHeight = 0.05 + Math.random()/5;
+  presentArray[i] = presentHeight;
+  present[i] = new THREE.Object3D();
+  var box = new THREE.Mesh(
+    new THREE.BoxGeometry(0.05 + Math.random()/3, presentHeight, 0.05 + Math.random()/3),
     new THREE.MeshPhongMaterial()
     );
-  present[i].material.color.setRGB(2*Math.random(), 2*Math.random(), 2*Math.random());
+  box.material.color.setRGB(2*Math.random(), 2*Math.random(), 2*Math.random());
+  box.position.y = presentHeight/2;
+  present[i].add(box);
   present[i].position.x = Math.random()*50 - 25;
   present[i].position.z = Math.random()*50 - 25;
-  present[i].position.y = presentHeight/2;
   everything.add(present[i]);
 }
 
@@ -248,12 +254,16 @@ scene.add(everything);
   sled.add(sledFront);
 
   var slat = new THREE.Mesh(
-    new THREE.BoxGeometry(0.5,0.05,1),
+    new THREE.BoxGeometry(0.5,0.05,1.1),
     new THREE.MeshLambertMaterial({color: 0x330000})
     );
   sled.add(slat);
 
   scene.add(sled);
+  sled.matrixAutoUpdate = false;
+
+  // sledMatrix.set(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15);
+
 
   // var headProjection = new THREE.Mesh(
   //  new THREE.IcosahedronGeometry(),
@@ -282,7 +292,19 @@ function animate() {
   // headProjection.position.x = pos.x;
   // headProjection.position.z = pos.y;
 
-  sled.rotation.y = Math.atan2(pos.x,pos.y);
+  // sled.rotation.y = Math.atan2(pos.x,pos.y);
+
+  var xThing = new THREE.Vector2();
+  xThing.copy(pos);
+  xThing.normalize();
+  sled.matrix.set(
+    xThing.y, 0, xThing.x, 0,
+    0, 1, 0, 0,
+    -xThing.x, 0, xThing.y, 0,
+    0, 0, 0, 1
+    );
+
+  sled.matrixWorldNeedsUpdate = true;
 
   if ((pos.distanceTo(sled.position) < sledToggleDistance) && (camera.position.y < crouchToggleHeight)){
     sledToggle = 1;
@@ -353,19 +375,35 @@ function animate() {
     }
   }
 
-  for (var i = 0; i< presentNumber; i++){
-    var presentPos = new THREE.Vector2();
+  for (var i = 0; i< presentNumber; i++){//look at all presents
+    var presentPos = new THREE.Vector2(); //make relative position vector
     presentPos.set(present[i].position.x + everything.position.x, present[i].position.z + everything.position.z);
-    if (presentPos.distanceTo(pos) < 1){
-      if (presentArray[i] == 0){
-        presentArray[i] = 1;
-        present[i].position.y = presentsFound*presentHeight;
-        presentsFound++
+    if (presentPos.distanceTo(pos) < 1){//if close to present,
+      if (presentArray[i] !== 0){//if it hasn't been found yet,
+        present[i].position.y = stackHeight;
+        presentsFound++;
+        stackHeight += presentArray[i];
+        presentArray[i] = 0;
+        presentStack.add(present[i]);
+        present[i].position.x = 0;
+        present[i].position.z = 0;
       }
-      present[i].position.x = -everything.position.x;
-      present[i].position.z = -everything.position.z;
     }
   }
+
+  var stackPos = new THREE.Vector2();
+  stackPos.set(-pos.x, -pos.y);
+  stackPos.normalize();
+  stackPos.multiplyScalar(0.5);
+
+  presentStack.matrix.set(
+    xThing.y, 0, xThing.x, stackPos.x,
+    0, 1, 0, 0,
+    -xThing.x, 0, xThing.y, stackPos.y,
+    0, 0, 0, 1
+    );
+
+  presentStack.matrixWorldNeedsUpdate = true;
 
   if (presentsFound == presentNumber){
     pine[0].scale.set(5,5,5);
@@ -424,5 +462,14 @@ window.addEventListener( 'resize', onWindowResize, false );
 Efficient Optomizationatron Listo
 
 make cone trees actually cones
+
+*/
+
+/* What is the matrix?
+
+first vector x, second vector x, third vector x, x position,
+first vector y, second vector y, third vector y, y position,
+first vector z, second vector z, third vector z, z position,
+first vector w, second vector w, third vector w, w wants to be 1
 
 */
