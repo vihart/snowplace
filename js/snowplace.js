@@ -93,6 +93,8 @@ scene.add( plane3 );
   particleSystem.frustumCulled = false;
   everything.add(particleSystem);
 
+  scene.add(everything);
+
 //lights    
 var light = new THREE.PointLight( 0xffffff, 0.7, 100);
 light.position.set( -10,25,-2);
@@ -234,6 +236,45 @@ for (var i = 0; i<presentNumber; i++){
   everything.add(present[i]);
 }
 
+//snow eagles
+var eagle = [];
+var eagleNumber = 10;
+var eagleHeight = [];
+var nose = [];
+var noseHeight = [];
+for (var i = 0; i < eagleNumber; i++){
+  eagle[i] = new THREE.Object3D;
+  var segments = Math.floor(2 + Math.random()*3);
+  eagleHeight[i] = 0;
+  for (var j = 0; j < segments; j++){
+    var sphereScale = (1/(j+2));
+    var sphereo = new THREE.Mesh(
+      new THREE.IcosahedronGeometry(sphereScale, 1),
+      new THREE.MeshPhongMaterial()
+      );
+    sphereo.position.y = sphereScale + eagleHeight[i] - 0.1;
+    eagleHeight[i] += 2*sphereScale - 0.1;
+    eagle[i].add(sphereo);
+  }
+  nose[i] = new THREE.Object3D();
+  var carrot = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.001, 0.07, 0.5),
+    new THREE.MeshLambertMaterial({color: 0xff7700})
+    );
+  noseHeight[i] = eagleHeight[i] - (1/segments);
+  nose[i].position.y = noseHeight[i];
+  carrot.rotation.x = tau/4;
+  carrot.position.z = 0.25;
+  nose[i].add(carrot);
+  eagle[i].position.x = Math.random()*10 - 5;
+  eagle[i].position.z = Math.random()*10 - 5;
+  nose[i].position.x = eagle[i].position.x;
+  nose[i].position.z = eagle[i].position.z;
+  everything.add(nose[i]);
+  everything.add(eagle[i]);
+}
+
+
 scene.add(everything);
 
   var sled = new THREE.Object3D();
@@ -281,6 +322,8 @@ scene.add(everything);
   var sledToggle = 0;
   var sledToggleDistance = 0.4;
 
+  var behindPos = new THREE.Vector3;
+
   var presentsFound = 0;
 
   var t = 0;
@@ -288,6 +331,7 @@ scene.add(everything);
 Request animation frame loop function
 */
 function animate() {
+
   pos.set(camera.position.x, camera.position.z);
   // headProjection.position.x = pos.x;
   // headProjection.position.z = pos.y;
@@ -408,6 +452,22 @@ function animate() {
   if (presentsFound == presentNumber){
     pine[0].scale.set(5,5,5);
   }
+
+  
+
+  for (var i = 0; i < eagleNumber; i++){
+    var nosePos = new THREE.Vector2();
+    nosePos.set(eagle[i].position.x + everything.position.x, eagle[i].position.z + everything.position.z);
+    var noseDistance = nosePos.distanceTo(pos);
+    if (noseDistance < 2){
+      eagle[i].scale.set(1 + 1-Math.min(1, noseDistance), Math.min(1, noseDistance/2), 1 + 1 - Math.min(1, noseDistance));
+      nose[i].position.y = noseHeight[i]*Math.min(1, noseDistance/2);
+    } else { 
+      behindPos.set(2*camera.position.x - everything.position.x + camera.position.z/2, camera.position.y*Math.min(1, noseDistance*2), 2*camera.position.z - everything.position.z -camera.position.x/2)
+      nose[i].lookAt(behindPos);
+    }
+  }
+
 
   //Update VR headset position and apply to camera.
   controls.update();
