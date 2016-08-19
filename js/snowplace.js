@@ -503,6 +503,7 @@ function onkey(event) {
     controls.resetSensor(); //zero rotation
   } else if (event.keyCode == 70 || event.keyCode == 13) { //f or enter
     effect.setFullScreen(true) //fullscreen
+    effect.setVRMode(true);
   }
 };
 window.addEventListener("keydown", onkey, true);

@@ -40,45 +40,17 @@ THREE.VREffect = function ( renderer, done ) {
 		self.rightEyeFOV = { upDegrees: 53.04646464878503, rightDegrees: 46.63209579904155, downDegrees: 53.04646464878503, leftDegrees: 47.52769258067174 };
 
 
-		if (!navigator.getVRDisplays && !navigator.mozGetVRDevices && !navigator.getVRDevices) {
+		if ( !navigator.mozGetVRDevices && !navigator.getVRDevices ) {
 			if ( done ) {
 				done("Your browser is not VR Ready");
 			}
 			return;
 		}
-		if (navigator.getVRDisplays) {
-			navigator.getVRDisplays().then( gotVRDisplay );
-		}else if ( navigator.getVRDevices ) {
+		if ( navigator.getVRDevices ) {
 			navigator.getVRDevices().then( gotVRDevices );
 		} else {
 			navigator.mozGetVRDevices( gotVRDevices );
 		}
-
-		function gotVRDisplay( devices ) {
-			var vrHMD;
-			var error;
-			for ( var i = 0; i < devices.length; ++i ) {
-				if ( devices[i] instanceof VRDisplay ) {
-					vrHMD = devices[i];
-					self._vrHMD = vrHMD;
-					var parametersLeft = vrHMD.getEyeParameters( "left" );
-					var parametersRight = vrHMD.getEyeParameters( "right" );
-					self.leftEyeTranslation = parametersLeft.offset;
-					self.rightEyeTranslation = parametersRight.offset;
-					self.leftEyeFOV = parametersLeft.fieldOfView;
-					self.rightEyeFOV = parametersRight.fieldOfView;
-					break; // We keep the first we encounter
-				}
-			}
-
-			if ( done ) {
-				if ( !vrHMD ) {
-				 error = 'HMD not available';
-				}
-				done( error );
-			}
-		}
-
 		function gotVRDevices( devices ) {
 			var vrHMD;
 			var error;
@@ -114,9 +86,6 @@ THREE.VREffect = function ( renderer, done ) {
 		// VR render mode if HMD is available
 		if ( vrHMD ) {
 			this.renderStereo.apply( this, arguments );
-			if (vrHMD.submitFrame !== undefined) {
-				vrHMD.submitFrame();
-			}
 			return;
 		}
 
@@ -151,14 +120,8 @@ THREE.VREffect = function ( renderer, done ) {
 		camera.matrixWorld.decompose( cameraLeft.position, cameraLeft.quaternion, cameraLeft.scale );
 		camera.matrixWorld.decompose( cameraRight.position, cameraRight.quaternion, cameraRight.scale );
 
-		if (leftEyeTranslation.x !== undefined) {
-			cameraLeft.translateX( leftEyeTranslation.x );
-			cameraRight.translateX( rightEyeTranslation.x );
-		} else {
-			cameraLeft.translateX( leftEyeTranslation[0] );
-			cameraRight.translateX( rightEyeTranslation[0] );
-		}
-
+		cameraLeft.translateX( leftEyeTranslation.x );
+		cameraRight.translateX( rightEyeTranslation.x );
 
 		// render left eye
 		renderer.setViewport( 0, 0, eyeDivisionLine, rendererHeight );
@@ -176,21 +139,9 @@ THREE.VREffect = function ( renderer, done ) {
 		renderer.setSize( width, height );
 	};
 
-	this.setVRMode = function (enable) {
-		var vrHMD = this._vrHMD;
-		var canvas = renderer.domElement;
-
-		if (enable) {
-			vrHMD.requestPresent([{source: canvas, leftBounds: [0.0, 0.0, 0.5, 1.0], rightBounds: [0.5, 0.0, 0.5, 1.0]}]);
-		} else {
-			vrHMD.exitPresent();
-		}
-	}
-
 	this.setFullScreen = function( enable ) {
 		var renderer = this._renderer;
 		var vrHMD = this._vrHMD;
-
 		var canvasOriginalSize = this._canvasOriginalSize;
 
 		// If state doesn't change we do nothing
@@ -222,7 +173,6 @@ THREE.VREffect = function ( renderer, done ) {
 			width: renderer.domElement.width,
 			height: renderer.domElement.height
 		};
-
 		// Hardcoded Rift display size
 		renderer.setSize( 1280, 800, false );
 		this.startFullscreen();

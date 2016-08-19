@@ -7,7 +7,7 @@
 THREE.VRControls = function ( camera, speed, done ) {
 	this.phoneVR = new PhoneVR();
 
-	this.speed = speed || 1; // 3 is just a good default speed multiplier
+	this.speed = speed || 3; // 3 is just a good default speed multiplier
 
 	//---game controller stuff---
 	this.haveEvents = 'ongamepadconnected' in window;
@@ -73,36 +73,17 @@ THREE.VRControls = function ( camera, speed, done ) {
 			setInterval(scangamepads, 500);
 		}
 
-		if (!navigator.getVRDisplays && !navigator.mozGetVRDevices && !navigator.getVRDevices) {
+		if ( !navigator.mozGetVRDevices && !navigator.getVRDevices ) {
 			if ( done ) {
 				done("Your browser is not VR Ready");
 			}
 			return;
 		}
-		if (navigator.getVRDisplays) {
-			navigator.getVRDisplays().then( gotVRDisplay );
-		}else if ( navigator.getVRDevices ) {
+
+		if ( navigator.getVRDevices ) {
 			navigator.getVRDevices().then( gotVRDevices );
 		} else {
 			navigator.mozGetVRDevices( gotVRDevices );
-		}
-
-		function gotVRDisplay( devices) {
-			var vrInput;
-			var error;
-			for ( var i = 0; i < devices.length; ++i ) {
-				if ( devices[i] instanceof VRDisplay ) {
-					vrInput = devices[i]
-					self._vrInput = vrInput;
-					break; // We keep the first we encounter
-				}
-			}
-			if ( done ) {
-				if ( !vrInput ) {
-				 error = 'HMD not available';
-				}
-				done( error );
-			}
 		}
 
 		function gotVRDevices( devices ) {
@@ -210,21 +191,19 @@ THREE.VRControls = function ( camera, speed, done ) {
 							.add(getRightVector().multiplyScalar( interval * this.speed * this.manualMoveRate[1]))
 							.add(getUpVector().multiplyScalar( interval * this.speed * this.manualMoveRate[2]));
 			}
-
 		// }
 
 		if ( camera ) {
 			if ( !vrState ) {
 				camera.quaternion.copy(manualRotation);
-				camera.position = camera.position.add(offset);
 				return;
 			}
 
 			// Applies head rotation from sensors data.
 			var totalRotation = new THREE.Quaternion();
-
-      if (vrState !== null) {
-					var vrStateRotation = new THREE.Quaternion(vrState.hmd.rotation[0], vrState.hmd.rotation[1], vrState.hmd.rotation[2], vrState.hmd.rotation[3]);
+			var state = vrInput.getState();
+      if (state.orientation !== null) {
+					var vrStateRotation = new THREE.Quaternion(state.orientation.x, state.orientation.y, state.orientation.z, state.orientation.w);
 	        totalRotation.multiplyQuaternions(manualRotation, vrStateRotation);
       } else {
         	totalRotation = manualRotation;
@@ -232,8 +211,9 @@ THREE.VRControls = function ( camera, speed, done ) {
 
 			camera.quaternion.copy(totalRotation);
 
-			if (vrState.hmd.position !== null) {
-				camera.position.copy( {x: vrState.hmd.position[0], y: vrState.hmd.position[1], z: vrState.hmd.position[2]} ).multiplyScalar( this.scale );
+			if (state.position !== null) {
+				camera.position.copy( state.position ).multiplyScalar( this.scale );
+				camera.position = camera.position.add(offset);
 			}
 		}
 	};
@@ -269,22 +249,12 @@ THREE.VRControls = function ( camera, speed, done ) {
 	this.getVRState = function() {
 		var vrInput = this._vrInput;
 		var orientation;
-		var position;
 		var vrState;
 
 		if ( vrInput ) {
-			if (vrInput.getState !== undefined) {
-				orientation	= vrInput.getState().orientation;
-				orientation = [orientation.x, orientation.y, orientation.z, orientation.w];
-				position = vrInput.getState().position;
-				position = [position.x, position.y, position.z];
-			} else {
-				orientation	= vrInput.getPose().orientation;
-				position = vrInput.getPose().position;
-			}
+			orientation	= vrInput.getState().orientation;
 		} else if (this.phoneVR.rotationQuat()) {
 			orientation = this.phoneVR.rotationQuat();
-			orientation = [orientation.x, orientation.y, orientation.z, orientation.w];
 		} else {
 			return null;
 		}
@@ -295,19 +265,13 @@ THREE.VRControls = function ( camera, speed, done ) {
 		vrState = {
 			hmd : {
 				rotation : [
-					orientation[0],
-					orientation[1],
-					orientation[2],
-					orientation[3]
-				],
-				position : [
-					position[0],
-					position[1],
-					position[2] +1.8
+					orientation.x,
+					orientation.y,
+					orientation.z,
+					orientation.w
 				]
 			}
 		};
-
 		return vrState;
 	};
 
