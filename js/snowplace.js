@@ -54,8 +54,13 @@ for (var i = 0; i < plane.geometry.vertices.length; i++){
 var eatSnowDistance = 3;
 
 //flatground
-var plane3Geometry = new THREE.PlaneGeometry( 50, 50, 5, 5 );
-var plane3Material = new THREE.MeshLambertMaterial( {color: 0x662200, side: THREE.DoubleSide, wireframe:false} );
+var texture = THREE.ImageUtils.loadTexture( 'img/brick-texture.jpg' );
+texture.wrapS = THREE.RepeatWrapping;
+texture.wrapT = THREE.RepeatWrapping;
+texture.repeat.set( 128, 128 );
+var plane3Geometry = new THREE.PlaneBufferGeometry( 50, 50, 5, 5 );
+var plane3Material = new THREE.MeshBasicMaterial();
+plane3Material.map = texture;
 var plane3 = new THREE.Mesh( plane3Geometry, plane3Material );
 plane3.rotation.x = -pi/2;
 scene.add( plane3 );
